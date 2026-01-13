@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [output, setOutput] = useState(null);
-  const [bg, setBg] = useState("#ffffff");
+  const [result, setResult] = useState(null);
+  const [bg, setBg] = useState("#00ffff");
 
   async function upload(e) {
     const file = e.target.files[0];
@@ -11,27 +11,57 @@ export default function Home() {
 
     const res = await fetch("/api/remove-bg", {
       method: "POST",
-      body: fd
+      body: fd,
     });
 
     const blob = await res.blob();
-    setOutput(URL.createObjectURL(blob));
+    const url = URL.createObjectURL(blob);
+
+    drawWithBg(url, bg);
+  }
+
+  function drawWithBg(imgUrl, color) {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      setResult(canvas.toDataURL("image/png"));
+    };
+    img.src = imgUrl;
   }
 
   return (
-    <div style={{padding:"40px",fontFamily:"Arial"}}>
-      <h1 style={{color:"#2563eb"}}>YaqubBG</h1>
+    <div style={{ padding: "30px", fontFamily: "Arial" }}>
+      <h1 style={{ color: "#2563eb" }}>YaqubBG</h1>
       <p>AI Background Remover</p>
 
-      <input type="file" onChange={upload} /><br/><br/>
+      <input type="file" onChange={upload} />
+      <br /><br />
 
-      <input type="color" value={bg} onChange={e=>setBg(e.target.value)} />
+      <input
+        type="color"
+        value={bg}
+        onChange={(e) => {
+          setBg(e.target.value);
+          if (result) drawWithBg(result, e.target.value);
+        }}
+      />
 
-      {output && (
-        <div style={{marginTop:"20px",background:bg,padding:"20px"}}>
-          <img src={output} style={{maxWidth:"300px"}}/>
-        </div>
+      <br /><br />
+
+      <canvas id="canvas" style={{ display: "none" }} />
+
+      {result && (
+        <img src={result} style={{ maxWidth: "300px", border: "1px solid #ccc" }} />
       )}
     </div>
   );
-}
+        }
