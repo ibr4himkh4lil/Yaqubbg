@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [result, setResult] = useState(null);
-  const [bg, setBg] = useState("#00ffff");
+  const [finalImage, setFinalImage] = useState(null);
+  const [bgColor, setBgColor] = useState("#00ffff");
 
-  async function upload(e) {
+  async function handleUpload(e) {
     const file = e.target.files[0];
     const fd = new FormData();
     fd.append("image", file);
@@ -15,13 +15,14 @@ export default function Home() {
     });
 
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-
-    drawWithBg(url, bg);
+    const imgURL = URL.createObjectURL(blob);
+    applyBackground(imgURL, bgColor);
   }
 
-  function drawWithBg(imgUrl, color) {
+  function applyBackground(imgURL, color) {
     const img = new Image();
+    img.crossOrigin = "anonymous";
+
     img.onload = () => {
       const canvas = document.getElementById("canvas");
       const ctx = canvas.getContext("2d");
@@ -33,9 +34,11 @@ export default function Home() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
 
-      setResult(canvas.toDataURL("image/png"));
+      const final = canvas.toDataURL("image/png");
+      setFinalImage(final);
     };
-    img.src = imgUrl;
+
+    img.src = imgURL;
   }
 
   return (
@@ -43,25 +46,28 @@ export default function Home() {
       <h1 style={{ color: "#2563eb" }}>YaqubBG</h1>
       <p>AI Background Remover</p>
 
-      <input type="file" onChange={upload} />
+      <input type="file" onChange={handleUpload} />
       <br /><br />
 
       <input
         type="color"
-        value={bg}
-        onChange={(e) => {
-          setBg(e.target.value);
-          if (result) drawWithBg(result, e.target.value);
-        }}
+        value={bgColor}
+        onChange={(e) => setBgColor(e.target.value)}
       />
 
       <br /><br />
 
       <canvas id="canvas" style={{ display: "none" }} />
 
-      {result && (
-        <img src={result} style={{ maxWidth: "300px", border: "1px solid #ccc" }} />
+      {finalImage && (
+        <>
+          <img src={finalImage} style={{ maxWidth: "300px" }} />
+          <br /><br />
+          <a href={finalImage} download="yaqubbg.png">
+            <button>Download</button>
+          </a>
+        </>
       )}
     </div>
   );
-        }
+}
